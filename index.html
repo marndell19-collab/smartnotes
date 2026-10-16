@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+    <title>Smart Notes &amp; Reminders</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SmartNotes">
+
+    <style>
+        :root {
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-color: #1c1c1e;
+            --accent-color: #007aff;
+            --border-color: #e5e5ea;
+            --muted-text: #8e8e93;
+            --cal-color: #ff2d55;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1c1c1e;
+                --card-bg: #2c2c2e;
+                --text-color: #ffffff;
+                --accent-color: #0a84ff;
+                --border-color: #3a3a3c;
+                --muted-text: #aeaeb2;
+            }
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);
+        }
+        main { max-width: 680px; margin: 0 auto; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0 10px;
+        }
+        h1 { font-size: 28px; font-weight: 700; }
+        .input-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        textarea {
+            display: block;
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.4;
+            resize: vertical;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        .input-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        input[type="datetime-local"] {
+            max-width: 100%;
+            min-width: 0;
+            border: none;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            color-scheme: light dark;
+        }
+        button {
+            min-height: 44px;
+            background: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        button:focus-visible, textarea:focus-visible, input:focus-visible {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+        .filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .filter-chip {
+            flex: 0 0 auto;
+            background: var(--card-bg);
+            color: var(--text-color);
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            border: 1px solid var(--border-color);
+        }
+        .filter-chip.active {
+            background: var(--accent-color);
+            color: #ffffff;
+            border-color: var(--accent-color);
+        }
+        .items-list { display: flex; flex-direction: column; gap: 12px; }
+        .item-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+            animation: fadeIn 0.2s ease-out;
+        }
+        .item-header { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+        .created-date { font-size: 11px; color: var(--muted-text); }
+        .tag {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-color);
+            color: var(--muted-text);
+        }
+        .tag.urgent { background: #ff3b30; color: #ffffff; }
+        .tag.work { background: #5856d6; color: #ffffff; }
+        .tag.personal { background: #34c759; color: #ffffff; }
+        .item-body { font-size: 16px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 12px; }
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted-text);
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+        .action-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+        .cal-btn {
+            background: transparent;
+            color: var(--cal-color);
+            border: 1px solid var(--cal-color);
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .delete-btn { background: transparent; color: #ff3b30; padding: 6px 8px; font-size: 12px; }
+        .empty-state { text-align: center; padding: 40px; color: var(--muted-text); font-size: 14px; }
+        .storage-error {
+            padding: 12px;
+            margin-bottom: 16px;
+            background: var(--card-bg);
+            border: 1px solid #ff3b30;
+            border-radius: 12px;
+            color: var(--text-color);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        [hidden] { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) { .item-card { animation: none; } }
+    </style>
+</head>
+<body>
+    <main>
+        <header><h1>Workspace</h1></header>
+
+        <div id="storageError" class="storage-error" role="alert" hidden></div>
+
+        <section class="input-container" aria-label="Create a note or reminder">
+            <textarea id="itemText" placeholder="Write a note... (use #work, #personal, or !urgent to auto-tag)" rows="3" aria-label="Note text"></textarea>
+            <div class="input-footer">
+                <input type="datetime-local" id="itemReminder" aria-label="Optional reminder date and time">
+                <button id="saveButton" type="button">Save</button>
+            </div>
+        </section>
+
+        <nav class="filters" aria-label="Filter notes">
+            <button type="button" class="filter-chip active" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" class="filter-chip" data-filter="urgent" aria-pressed="false">⚠️ Urgent</button>
+            <button type="button" class="filter-chip" data-filter="work" aria-pressed="false">💼 Work</button>
+            <button type="button" class="filter-chip" data-filter="personal" aria-pressed="false">🏠 Personal</button>
+            <button type="button" class="filter-chip" data-filter="reminders" aria-pressed="false">⏰ Reminders</button>
+        </nav>
+
+        <div id="itemsList" class="items-list" aria-live="polite"></div>
+    </main>
+
+    <script>
+        'use strict';
+
+        // Preserve the existing storage key AND each item's original fields.
+        const STORAGE_KEY = 'smart_items';
+        let items = [];
+        let storageAvailable = true;
+        let currentFilter = 'all';
+
+        function reportStorageError(message) {
+            const warning = document.getElementById('storageError');
+            warning.textContent = message;
+            warning.hidden = false;
+        }
+
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const parsed = saved === null ? [] : JSON.parse(saved);
+            if (!Array.isArray(parsed)) throw new Error('Saved items are not an array');
+            items = parsed;
+        } catch (error) {
+            storageAvailable = false;
+            reportStorageError('Saved notes could not be loaded. Nothing has been overwritten. Check browser storage before adding or deleting notes.');
+        }
+
+        function saveToStorage(updatedItems) {
+            if (!storageAvailable) return false;
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedItems));
+                items = updatedItems;
+                renderItems();
+                return true;
+            } catch (error) {
+                reportStorageError('Unable to save changes to local storage. Your existing saved notes have not been overwritten.');
+                return false;
+            }
+        }
+
+        function addItem() {
+            if (!storageAvailable) return;
+            const textEl = document.getElementById('itemText');
+            const reminderEl = document.getElementById('itemReminder');
+            if (!textEl.value.trim()) return;
+
+            let text = textEl.value;
+            let tag = 'general';
+            if (text.toLowerCase().includes('!urgent')) {
+                tag = 'urgent';
+                text = text.replace(/!urgent/gi, '').trim();
+            } else if (text.toLowerCase().includes('#work')) {
+                tag = 'work';
+                text = text.replace(/#work/gi, '').trim();
+            } else if (text.toLowerCase().includes('#personal')) {
+                tag = 'personal';
+                text = text.replace(/#personal/gi, '').trim();
+            }
+
+            let id = Date.now();
+            while (items.some(item => item.id === id)) id += 1;
+
+            const newItem = {
+                id: id,
+                text: text,
+                tag: tag,
+                reminder: reminderEl.value || null,
+                created: new Date().toLocaleDateString('en-AU')
+            };
+
+            if (saveToStorage([newItem, ...items])) {
+                textEl.value = '';
+                reminderEl.value = '';
+            }
+        }
+
+        function deleteItem(id) {
+            saveToStorage(items.filter(item => item.id !== id));
+        }
+
+        // RFC 5545: escape text, use UTC dates and CRLF line endings.
+        function escapeICSText(value) {
+            return String(value)
+                .replace(/\\/g, '\\\\')
+                .replace(/\r\n|\r|\n/g, '\\n')
+                .replace(/;/g, '\\;')
+                .replace(/,/g, '\\,');
+        }
+
+        function utcICSDate(date) {
+            return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+        }
+
+        // Fold long calendar lines on UTF-8 character boundaries (max 75 octets).
+        function foldICSLine(line) {
+            const encoder = new TextEncoder();
+            let result = '';
+            let length = 0;
+            for (const character of line) {
+                const bytes = encoder.encode(character).length;
+                if (length + bytes > 75) {
+                    result += '\r\n ';
+                    length = 1;
+                }
+                result += character;
+                length += bytes;
+            }
+            return result;
+        }
+
+        function addToAppleCalendar(itemId) {
+            const item = items.find(entry => entry.id === itemId);
+            if (!item || !item.reminder) return;
+
+            const start = new Date(item.reminder);
+            if (Number.isNaN(start.getTime())) {
+                window.alert('This reminder has an invalid date.');
+                return;
+            }
+            const end = new Date(start.getTime() + 30 * 60 * 1000);
+            const title = String(item.text).split(/\r\n|\r|\n/).find(line => line.trim()) || 'Reminder';
+            const lines = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//SmartNotes//Smart Notes and Reminders//EN',
+                'CALSCALE:GREGORIAN',
+                'BEGIN:VEVENT',
+                `UID:${item.id}@smartnotes.local`,
+                `DTSTAMP:${utcICSDate(new Date())}`,
+                `DTSTART:${utcICSDate(start)}`,
+                `DTEND:${utcICSDate(end)}`,
+                `SUMMARY:${escapeICSText(title)}`,
+                `DESCRIPTION:${escapeICSText(item.text)}`,
+                'BEGIN:VALARM',
+                'ACTION:DISPLAY',
+                `DESCRIPTION:${escapeICSText(title)}`,
+                'TRIGGER:PT0S',
+                'END:VALARM',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ];
+
+            const icsContent = lines.map(foldICSLine).join('\r\n') + '\r\n';
+            const file = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const objectURL = URL.createObjectURL(file);
+            const link = document.createElement('a');
+            link.href = objectURL;
+            link.download = `reminder-${item.id}.ics`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            // Keep the URL alive briefly for iOS to complete the download.
+            window.setTimeout(() => URL.revokeObjectURL(objectURL), 60000);
+        }
+
+        function filterItems(filter, button) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                const selected = chip === button;
+                chip.classList.toggle('active', selected);
+                chip.setAttribute('aria-pressed', String(selected));
+            });
+            renderItems();
+        }
+
+        function renderItems() {
+            const listEl = document.getElementById('itemsList');
+            listEl.replaceChildren();
+            const filtered = items.filter(item => {
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'reminders') return item.reminder !== null;
+                return item.tag === currentFilter;
+            });
+
+            if (filtered.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'empty-state';
+                empty.textContent = 'No items found';
+                listEl.appendChild(empty);
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('article');
+                card.className = 'item-card';
+
+                const header = document.createElement('div');
+                header.className = 'item-header';
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                if (['urgent', 'work', 'personal'].includes(item.tag)) tag.classList.add(item.tag);
+                tag.textContent = String(item.tag || 'general');
+                const created = document.createElement('span');
+                created.className = 'created-date';
+                created.textContent = String(item.created || '');
+                header.append(tag, created);
+
+                const body = document.createElement('div');
+                body.className = 'item-body';
+                body.textContent = String(item.text ?? '');
+
+                const footer = document.createElement('div');
+                footer.className = 'item-footer';
+                const deadline = document.createElement('span');
+                if (item.reminder) {
+                    const date = new Date(item.reminder);
+                    deadline.textContent = Number.isNaN(date.getTime())
+                        ? '⏰ Invalid date'
+                        : `⏰ ${date.toLocaleString('en-AU', {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}`;
+                }
+
+                const actions = document.createElement('div');
+                actions.className = 'action-btns';
+                if (item.reminder) {
+                    const calendar = document.createElement('button');
+                    calendar.type = 'button';
+                    calendar.className = 'cal-btn';
+                    calendar.textContent = '＋ Calendar';
+                    calendar.addEventListener('click', () => addToAppleCalendar(item.id));
+                    actions.appendChild(calendar);
+                }
+                const clear = document.createElement('button');
+                clear.type = 'button';
+                clear.className = 'delete-btn';
+                clear.textContent = 'Clear';
+                clear.setAttribute('aria-label', `Clear note: ${String(item.text || '').slice(0, 50)}`);
+                clear.addEventListener('click', () => deleteItem(item.id));
+                actions.appendChild(clear);
+
+                footer.append(deadline, actions);
+                card.append(header, body, footer);
+                listEl.appendChild(card);
+            });
+        }
+
+        document.getElementById('saveButton').addEventListener('click', addItem);
+        document.querySelectorAll('.filter-chip').forEach(button => {
+            button.addEventListener('click', () => filterItems(button.dataset.filter, button));
+        });
+
+        // The separate, same-origin HTTPS service worker caches the app shell.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
+                    .catch(error => console.warn('Offline caching unavailable:', error));
+            });
+        }
+
+        renderItems();
+    </script>
+</body>
+</html>
